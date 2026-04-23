@@ -1,0 +1,9 @@
+Volunteer: Hi, thanks for calling the helpline. How are you doing today?
+Caller: Not good. I just feel like nothing matters anymore.
+Volunteer: I'm sorry to hear that. Can you tell me more about what's going on?
+Caller: I've been really depressed lately. I don't want to be here anymore.
+Volunteer: That sounds really hard. Are you having thoughts of hurting yourself?
+Caller: Yeah, honestly. I think about it a lot.
+Volunteer: I'm glad you told me. You're not alone in this. Can we talk about what's been happening?
+Caller: I guess. I just feel like everyone would be better off without me.
+Volunteer: I hear you. Those feelings are real. Let's stay on the line together and figure out next steps.
