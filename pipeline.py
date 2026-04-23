@@ -1,5 +1,6 @@
 import json
 import os
+from concurrent import futures
 from openai import OpenAI
 from dotenv import load_dotenv
 from prompts import (
@@ -32,13 +33,18 @@ def safe_parse(raw: str):
         return {"error": str(e), "raw": raw}
 
 def run_pipeline(transcript: str) -> dict:
-    # Step 1: Risk signal detection
-    raw_signals = call_gpt(RISK_DETECTION_PROMPT, f"TRANSCRIPT:\n{transcript}")
+    # Steps 1 and 3 are independent — run in parallel
+    with futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_signals = executor.submit(call_gpt, RISK_DETECTION_PROMPT, f"TRANSCRIPT:\n{transcript}")
+        f_mi = executor.submit(call_gpt, MI_SCORING_PROMPT, f"TRANSCRIPT:\n{transcript}")
+        raw_signals = f_signals.result()
+        raw_mi = f_mi.result()
+
     signals = safe_parse(raw_signals)
     if isinstance(signals, dict) and "error" in signals:
         return {"error": "Risk detection failed", "details": signals}
 
-    # Step 2: Confidence scoring
+    # Step 2: Confidence scoring (depends on signals)
     raw_confidence = call_gpt(CONFIDENCE_SCORING_PROMPT, f"FLAGGED SIGNALS:\n{json.dumps(signals, indent=2)}")
     confidence_scores = safe_parse(raw_confidence)
 
@@ -54,8 +60,6 @@ def run_pipeline(transcript: str) -> dict:
             signal["confidence"] = confidence_map[ex].get("confidence", "UNKNOWN")
             signal["confidence_reasoning"] = confidence_map[ex].get("confidence_reasoning", "")
 
-    # Step 3: MI scoring
-    raw_mi = call_gpt(MI_SCORING_PROMPT, f"TRANSCRIPT:\n{transcript}")
     mi_results = safe_parse(raw_mi)
 
     # Step 4: Coaching feedback
