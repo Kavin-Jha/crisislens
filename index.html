@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrisisLens — AI Coaching for Crisis Hotline Volunteers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #070C18;
+    --bg2: #0D1528;
+    --bg3: #162040;
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.12);
+    --teal: #0FF4C6;
+    --teal-dim: rgba(15,244,198,0.12);
+    --teal-glow: rgba(15,244,198,0.06);
+    --red: #FF4B6E;
+    --amber: #F5A623;
+    --text-primary: #F0F4FF;
+    --text-secondary: #8896B3;
+    --text-tertiary: #4A5568;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: radial-gradient(ellipse at 50% -10%, #0C1422 0%, #070C18 65%);
+    color: var(--text-secondary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+  /* Nav */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(7,12,24,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    color: var(--teal);
+    letter-spacing: -0.5px;
+    text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-cta {
+    background: var(--teal);
+    color: #070C18 !important;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem !important;
+    transition: all 0.2s !important;
+  }
+  .nav-cta:hover { box-shadow: 0 4px 16px rgba(15,244,198,0.3); transform: translateY(-1px); }
+
+  /* Hero */
+  .hero {
+    padding: 160px 0 100px;
+    text-align: center;
+    position: relative;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+  }
+  .hero-title {
+    font-family: var(--mono);
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 700;
+    color: var(--teal);
+    line-height: 1;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+  .cursor {
+    display: inline-block;
+    animation: blink 1.1s ease-in-out infinite;
+    color: var(--teal);
+  }
+  .hero-sub {
+    font-size: 1.15rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 560px;
+    margin: 0 auto 48px;
+    line-height: 1.7;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.3s;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.4s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #0FF4C6, #00C9A7);
+    color: #070C18;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 14px 32px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,244,198,0.3); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 14px 32px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.25); color: var(--text-primary); }
+
+  /* Stats */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 56px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.5s;
+  }
+  .stat-pill {
+    background: rgba(13,21,40,0.8);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stat-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--teal);
+    font-size: 0.9rem;
+  }
+
+  /* Section label */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  /* Problem section */
+  .problem {
+    padding: 80px 0;
+    border-top: 1px solid var(--border);
+  }
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .problem-text h2 {
+    font-family: var(--sans);
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+  .problem-text h2 span { color: var(--teal); }
+  .problem-text p {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    margin-bottom: 16px;
+  }
+  .problem-stats { display: flex; flex-direction: column; gap: 16px; }
+  .problem-stat-card {
+    background: rgba(13,21,40,0.8);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--teal);
+    border-radius: 10px;
+    padding: 20px 24px;
+    transition: border-color 0.2s;
+  }
+  .problem-stat-card:hover { border-color: rgba(255,255,255,0.12); }
+  .problem-stat-card:nth-child(2) { border-left-color: var(--amber); }
+  .problem-stat-card:nth-child(3) { border-left-color: var(--red); }
+  .problem-stat-num {
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+  .problem-stat-card:nth-child(2) .problem-stat-num { color: var(--amber); }
+  .problem-stat-card:nth-child(3) .problem-stat-num { color: var(--red); }
+  .problem-stat-desc { font-size: 0.85rem; line-height: 1.5; }
+
+  /* Pipeline */
+  .pipeline { padding: 80px 0; border-top: 1px solid var(--border); }
+  .pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin-top: 40px;
+  }
+  .pipeline-step {
+    background: rgba(13,21,40,0.8);
+    border: 1px solid var(--border);
+    padding: 28px 24px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .pipeline-step:first-child { border-radius: 12px 0 0 12px; }
+  .pipeline-step:last-child { border-radius: 0 12px 12px 0; }
+  .pipeline-step:hover { background: rgba(22,32,64,0.8); border-color: var(--border-hover); }
+  .pipeline-step::after {
+    content: '›';
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-size: 1.2rem;
+    z-index: 2;
+  }
+  .pipeline-step:last-child::after { display: none; }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--teal);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .step-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+  .step-desc { font-size: 0.82rem; line-height: 1.55; }
+
+  /* Features */
+  .features { padding: 80px 0; border-top: 1px solid var(--border); }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .feature-card {
+    background: rgba(13,21,40,0.8);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--teal), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .feature-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon { font-size: 1.5rem; margin-bottom: 16px; }
+  .feature-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
+  .feature-desc { font-size: 0.85rem; line-height: 1.6; }
+  .feature-badge {
+    display: inline-block;
+    margin-top: 14px;
+    background: var(--teal-dim);
+    color: var(--teal);
+    border: 1px solid rgba(15,244,198,0.2);
+    border-radius: 100px;
+    padding: 3px 12px;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+  .feature-badge.amber { background: rgba(245,166,35,0.1); color: var(--amber); border-color: rgba(245,166,35,0.2); }
+  .feature-badge.red { background: rgba(255,75,110,0.1); color: var(--red); border-color: rgba(255,75,110,0.2); }
+
+  /* Standout feature */
+  .standout { padding: 80px 0; border-top: 1px solid var(--border); }
+  .standout-inner {
+    background: rgba(13,21,40,0.8);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--teal);
+    border-radius: 16px;
+    padding: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .standout-text h2 {
+    font-family: var(--sans);
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .standout-text h2 span { color: var(--teal); font-family: var(--mono); }
+  .standout-text p { font-size: 0.92rem; line-height: 1.75; margin-bottom: 16px; }
+  .recall-demo {
+    background: rgba(7,12,24,0.6);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+  }
+  .recall-label { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 12px; font-family: var(--mono); }
+  .recall-num {
+    font-family: var(--mono);
+    font-size: 4.5rem;
+    font-weight: 700;
+    color: var(--teal);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .recall-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 24px; }
+  .recall-bars { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .recall-bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; }
+  .recall-bar-label { width: 80px; color: var(--text-tertiary); flex-shrink: 0; }
+  .recall-bar-track { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .recall-bar-fill { height: 100%; border-radius: 2px; }
+  .recall-bar-fill.caught { background: var(--teal); width: 67%; }
+  .recall-bar-fill.missed { background: var(--red); width: 33%; }
+  .recall-bar-count { color: var(--text-secondary); width: 20px; text-align: right; flex-shrink: 0; }
+
+  /* Framework */
+  .framework { padding: 80px 0; border-top: 1px solid var(--border); }
+  .framework-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .framework-card {
+    background: rgba(13,21,40,0.8);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
+  .framework-card h3 { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+  .framework-card .fw-sub { font-size: 0.78rem; color: var(--teal); font-family: var(--mono); margin-bottom: 16px; }
+  .framework-items { display: flex; flex-direction: column; gap: 8px; }
+  .fw-item { display: flex; gap: 10px; font-size: 0.83rem; }
+  .fw-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 6px; }
+  .fw-item span { line-height: 1.5; }
+
+  /* CTA */
+  .cta-section {
+    padding: 100px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  .cta-section h2 {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+  .cta-section h2 span { color: var(--teal); }
+  .cta-section p { font-size: 1rem; color: var(--text-secondary); margin-bottom: 40px; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .cta-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+  /* Ethics */
+  .ethics {
+    background: rgba(13,21,40,0.5);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 0;
+    margin: 0 0 0 0;
+  }
+  .ethics-inner {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .ethics-item { flex: 1; min-width: 200px; }
+  .ethics-title { font-size: 0.78rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ethics-desc { font-size: 0.82rem; line-height: 1.55; }
+
+  /* Footer */
+  footer {
+    padding: 40px 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    position: relative;
+    z-index: 1;
+  }
+  footer a { color: var(--text-tertiary); text-decoration: none; transition: color 0.2s; }
+  footer a:hover { color: var(--teal); }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: gap; gap: 16px; }
+
+  /* Animations */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .problem-grid, .standout-inner, .framework-grid { grid-template-columns: 1fr; }
+    .pipeline-grid { grid-template-columns: 1fr 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .pipeline-step:nth-child(2) { border-radius: 0 12px 0 0; }
+    .pipeline-step:nth-child(3) { border-radius: 0 0 0 12px; }
+    .pipeline-step::after { display: none; }
+    .nav-links { display: none; }
+    .hero { padding: 120px 0 80px; }
+    .hero-title { font-size: 2.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">CrisisLens</a>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#red-team">Red-Team</a>
+      <a href="#ethics">Ethics</a>
+      <a href="https://github.com/Kavin-Jha/crisislens" target="_blank">GitHub</a>
+      <a href="https://crisislens-on2hdffvbsdqfczrnyxjqg.streamlit.app" target="_blank" class="nav-cta">Launch App →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">INFO 7375 · Prompt Engineering · Final Project</div>
+    <h1 class="hero-title">CrisisLens<span class="cursor">|</span></h1>
+    <p class="hero-sub">Clinically grounded AI coaching for crisis hotline volunteer training. Powered by C-SSRS and Motivational Interviewing frameworks.</p>
+    <div class="hero-actions">
+      <a href="https://crisislens-on2hdffvbsdqfczrnyxjqg.streamlit.app" target="_blank" class="btn-primary">
+        Launch Live App →
+      </a>
+      <a href="https://github.com/Kavin-Jha/crisislens" target="_blank" class="btn-secondary">
+        View on GitHub
+      </a>
+    </div>
+    <div class="stats">
+      <div class="stat-pill"><span class="stat-num">5M+</span> contacts handled by 988 in 2023</div>
+      <div class="stat-pill"><span class="stat-num">50%+</span> annual staff turnover at crisis centers</div>
+      <div class="stat-pill"><span class="stat-num">2–3 hrs</span> manual review per trainee per week</div>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="problem fade-in">
+  <div class="container">
+    <div class="problem-grid">
+      <div class="problem-text">
+        <div class="section-label">The Problem</div>
+        <h2>The <span>feedback gap</span> in crisis training</h2>
+        <p>The 988 Suicide and Crisis Lifeline handled over 5 million contacts in 2023. The volunteers who answered those calls were, by most measures, undertrained and under-supported.</p>
+        <p>Supervisors stretched across dozens of trainees cannot listen to every practice call. Feedback is sparse. And the mistakes that miss a buried signal go uncaught — at the worst possible cost.</p>
+        <p>CrisisLens fills that gap. A trainee submits a simulated practice transcript and receives structured, clinically grounded coaching feedback in seconds.</p>
+      </div>
+      <div class="problem-stats">
+        <div class="problem-stat-card">
+          <div class="problem-stat-num">5M+</div>
+          <div class="problem-stat-desc">Contacts handled by the 988 Suicide and Crisis Lifeline in 2023 alone</div>
+        </div>
+        <div class="problem-stat-card">
+          <div class="problem-stat-num">50%+</div>
+          <div class="problem-stat-desc">Annual staff turnover at many crisis centers — a symptom of undertrained, under-supported volunteers</div>
+        </div>
+        <div class="problem-stat-card">
+          <div class="problem-stat-num">2–3 hrs</div>
+          <div class="problem-stat-desc">Time a training coordinator spends manually reviewing transcripts per trainee per week — time most organizations don't have</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pipeline -->
+<section class="pipeline fade-in" id="how-it-works">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <div class="pipeline-grid">
+      <div class="pipeline-step">
+        <div class="step-num">01</div>
+        <div class="step-title">Risk Detection</div>
+        <div class="step-desc">Scans every exchange for language mapping to Columbia Suicide Severity Rating Scale (C-SSRS) criteria — including veiled, embedded, and farewell-pattern signals.</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">02</div>
+        <div class="step-title">Confidence Scoring</div>
+        <div class="step-desc">Rates each flagged signal HIGH, MEDIUM, or LOW with clinical reasoning. A system that treats all flags identically is dangerous — this one doesn't.</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">03</div>
+        <div class="step-title">MI Evaluation</div>
+        <div class="step-desc">Scores volunteer responses against SAMHSA Motivational Interviewing principles — reflective listening, open-ended questions, appropriate escalation.</div>
+      </div>
+      <div class="pipeline-step">
+        <div class="step-num">04</div>
+        <div class="step-title">Coaching Feedback</div>
+        <div class="step-desc">Generates exchange-level coaching notes ordered by clinical severity, with specific recommended responses and ranked alternatives for every critical miss.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features fade-in" id="features">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Transcript Analysis</div>
+        <div class="feature-desc">Paste any simulated practice transcript and run the full 4-step agentic pipeline. Load from three sample difficulty levels or paste your own.</div>
+        <span class="feature-badge">Core Feature</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚔️</div>
+        <div class="feature-title">Red-Team Mode</div>
+        <div class="feature-desc">Generate adversarial transcripts with deliberately buried risk signals. Measure recall rate — the percentage the pipeline catches. Primary evaluation metric.</div>
+        <span class="feature-badge red">Standout Feature</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-title">Scenario Generator</div>
+        <div class="feature-desc">Generate targeted practice transcripts across 6 clinical scenario types: Indirect Language, Deflector, High-Functioning Crisis, Farewell Caller, and more.</div>
+        <span class="feature-badge">6 Scenario Types</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚖️</div>
+        <div class="feature-title">Comparative Analysis</div>
+        <div class="feature-desc">Submit two transcripts of the same scenario from different volunteers. Get a head-to-head supervisor verdict, shared gaps, and individual recommendations.</div>
+        <span class="feature-badge amber">Unique</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <div class="feature-title">Progress Tracker</div>
+        <div class="feature-desc">Track a volunteer's improvement across sessions with score trend charts and an AI-generated supervisor report card with readiness assessment.</div>
+        <span class="feature-badge">Longitudinal</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <div class="feature-title">Export Reports</div>
+        <div class="feature-desc">Download a structured Markdown coaching report after every analysis. Supervisors can send it directly to trainees — production-grade output.</div>
+        <span class="feature-badge">Production Ready</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Red-Team Standout -->
+<section class="standout fade-in" id="red-team">
+  <div class="container">
+    <div class="standout-inner">
+      <div class="standout-text">
+        <div class="section-label">Primary Evaluation Metric</div>
+        <h2>Built to catch <span>silent failures</span></h2>
+        <p>A silent failure is when the system produces a clean, professional-sounding coaching report — "great active listening, minor areas for improvement" — while completely missing that the caller signaled suicidal ideation three separate times.</p>
+        <p>Red-Team Mode generates adversarial transcripts with deliberately buried risk signals — signals designed to hide inside casual, cheerful conversation. Then it measures recall rate: what percentage did the pipeline actually catch?</p>
+        <p>This is how you separate a system that works in demos from one that works in the real world.</p>
+      </div>
+      <div class="recall-demo">
+        <div class="recall-label">Sample Recall Evaluation</div>
+        <div class="recall-num">67%</div>
+        <div class="recall-sub">of buried signals detected · 3 planted · 2 caught</div>
+        <div class="recall-bars">
+          <div class="recall-bar-row">
+            <div class="recall-bar-label">Caught</div>
+            <div class="recall-bar-track"><div class="recall-bar-fill caught"></div></div>
+            <div class="recall-bar-count">2</div>
+          </div>
+          <div class="recall-bar-row">
+            <div class="recall-bar-label">Missed</div>
+            <div class="recall-bar-track"><div class="recall-bar-fill missed"></div></div>
+            <div class="recall-bar-count">1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Framework -->
+<section class="framework fade-in">
+  <div class="container">
+    <div class="section-label">Clinical Frameworks</div>
+    <div class="framework-grid">
+      <div class="framework-card">
+        <h3>Columbia Suicide Severity Rating Scale</h3>
+        <div class="fw-sub">cssrs.columbia.edu · Publicly available</div>
+        <div class="framework-items">
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Passive Ideation</strong> — wishes to be dead, no plan</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Active Ideation</strong> — thinking about suicide, no method</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Ideation + Plan</strong> — has a method in mind</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Preparatory Behavior</strong> — taking steps toward attempt</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Veiled Signal</strong> — indirect language suggesting ideation</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Hopelessness Marker</strong> — clinically significant loss of meaning</span></div>
+        </div>
+      </div>
+      <div class="framework-card">
+        <h3>Motivational Interviewing Principles</h3>
+        <div class="fw-sub">SAMHSA Guidelines · Public domain</div>
+        <div class="framework-items">
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Reflective Listening</strong> — accurately reflects caller's emotional state</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Open-Ended Questions</strong> — invites elaboration, not yes/no</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Affirmation</strong> — acknowledges caller's strengths</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Avoid Leading</strong> — does not suggest answers or minimize</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">Appropriate Escalation</strong> — explores risk signals, does not pivot away</span></div>
+          <div class="fw-item"><div class="fw-dot"></div><span><strong style="color:#F0F4FF">No Premature Solutions</strong> — listens fully before suggesting anything</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Ethics -->
+<section class="ethics fade-in" id="ethics">
+  <div class="container">
+    <div class="ethics-inner">
+      <div class="ethics-item">
+        <div class="ethics-title">Synthetic Data Only</div>
+        <div class="ethics-desc">No real crisis call transcripts are used at any point. All data is synthetic, modeled on publicly available SAMHSA training materials.</div>
+      </div>
+      <div class="ethics-item">
+        <div class="ethics-title">No PII Stored</div>
+        <div class="ethics-desc">Session data exists only in memory during a local run. Nothing is persisted to any external database. Privacy risk is low by design, not assumption.</div>
+      </div>
+      <div class="ethics-item">
+        <div class="ethics-title">Honest Uncertainty</div>
+        <div class="ethics-desc">The confidence scoring layer explicitly flags ambiguous signals. The system is engineered to be honest about what it knows and what it doesn't.</div>
+      </div>
+      <div class="ethics-item">
+        <div class="ethics-title">Training Tool Only</div>
+        <div class="ethics-desc">CrisisLens does not interact with real callers. It does not replace supervisors. It sharpens the people trying to help.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section fade-in">
+  <div class="container">
+    <h2>Try <span>CrisisLens</span> live</h2>
+    <p>Load the Farewell sample transcript and see the system catch signals a volunteer missed entirely.</p>
+    <div class="cta-actions">
+      <a href="https://crisislens-on2hdffvbsdqfczrnyxjqg.streamlit.app" target="_blank" class="btn-primary">Launch App →</a>
+      <a href="https://github.com/Kavin-Jha/crisislens" target="_blank" class="btn-secondary">View Source</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <span>CrisisLens · INFO 7375 Prompt Engineering · Northeastern University · 2026</span>
+      <span>
+        <a href="https://cssrs.columbia.edu" target="_blank">C-SSRS</a> ·
+        <a href="https://www.samhsa.gov" target="_blank">SAMHSA</a> ·
+        <a href="https://github.com/Kavin-Jha/crisislens" target="_blank">GitHub</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll-triggered fade-ins
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
